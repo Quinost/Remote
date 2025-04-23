@@ -55,6 +55,8 @@ func opts() []chromedp.ExecAllocatorOption {
 		chromedp.Flag("disable-extensions", false),
 		chromedp.Flag("autoplay-policy", "no-user-gesture-required"),
 		chromedp.Flag("mute-audio", false),
+		chromedp.Flag("high-dpi-support", true),
+		chromedp.Flag("force-device-scale-factor", "1.0"),
 		chromedp.WindowSize(530, 900),
 		chromedp.UserDataDir(""),
 	)
@@ -136,21 +138,21 @@ func Scroll(payload any, c *ChromeController) {
 
 	log.Printf("Executing scroll: direction=%s, percent=%.2f%%", direction, percent)
 
-	// Skrypt JavaScript do przewijania
 	var scrollScript string
 	if direction == "up" {
 		scrollScript = fmt.Sprintf(`
             (function() {
-                var viewportHeight = window.innerHeight;
-                window.scrollBy(0, -%f * viewportHeight / 100);
+                var scrollAmount = -%f * window.innerHeight / 100;
+                window.scrollBy(0, Math.max(scrollAmount, -window.scrollY));
                 return true;
             })();
         `, percent)
-	} else if direction == "down" {
+	} else {
 		scrollScript = fmt.Sprintf(`
             (function() {
-                var viewportHeight = window.innerHeight;
-                window.scrollBy(0, %f * viewportHeight / 100);
+                var scrollAmount = %f * window.innerHeight / 100;
+				var maxScroll = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+                window.scrollBy(0, Math.min(scrollAmount, maxScroll - window.scrollY));
                 return true;
             })();
         `, percent)

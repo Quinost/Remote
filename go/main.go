@@ -10,7 +10,6 @@ import (
 	"os/signal"
 	"path/filepath"
 	"remote/chrome"
-	"strings"
 	"syscall"
 	"time"
 )
@@ -64,19 +63,17 @@ func (c *ControllerExt) handleIndex(w http.ResponseWriter, r *http.Request) {
 	distDir := "./dist"
 
 	path := filepath.Join(distDir, r.URL.Path)
-	_, err := os.Stat(path)
-	fsHandler := http.FileServer(http.Dir(distDir))
-
-	if err != nil {
-		_, err := os.Stat(path)
-
-		if os.IsNotExist(err) || strings.HasSuffix(r.URL.Path, "/") {
-			http.ServeFile(w, r, filepath.Join(distDir, "index.html"))
-			return
-		}
+	stat, err := os.Stat(path)
+	if os.IsNotExist(err) || stat.IsDir() {
+		http.ServeFile(w, r, filepath.Join(distDir, "index.html"))
+		return
+	} else if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		log.Printf("Error checking file stat %s: %v", path, err)
+		return
 	}
 
-	fsHandler.ServeHTTP(w, r)
+	http.FileServer(http.Dir(distDir)).ServeHTTP(w, r)
 }
 
 func writeInterfaces() {
@@ -119,7 +116,8 @@ func getInterfaces(ifaces []net.Interface) []string {
 			if ip == nil || ip.IsLoopback() {
 				continue
 			}
-			if ip.To4() != nil {
+			ip = ip.To4()
+			if ip != nil {
 				interfaces = append(interfaces, fmt.Sprintf("  ➜  http://%s:%d/", ip.String(), 8080))
 			}
 		}
