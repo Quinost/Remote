@@ -1,0 +1,37 @@
+
+<div>
+  <button *ngIf="!isConnected" (click)="connectWebSocket()">Connect</button>
+  <button *ngIf="isConnected" (click)="disconnectWebSocket()">Disconnect</button>
+</div>
+
+<hr>
+
+<div *ngIf="isConnected">
+  <div class="input-container">
+    <input type="text" id="urlInput" [(ngModel)]="urlInput" placeholder="np. https://google.com">
+    <button (click)="openUrl()" [disabled]="!urlInput">Open</button>
+  </div>
+
+  <div class="button-container">
+    <button (click)="sendBtn('volume_up')">VolUP</button>
+    <button (click)="sendBtn('volume_down')">VolDOWN</button>
+    <button (click)="sendBtn('exit_fullscreen')">ESC</button>
+    <button (click)="scrollPage('up')">ScrollUP</button>
+    <button (click)="scrollPage('down')">ScrollDOWN</button>
+  </div>
+
+  <div class="screenshot-container">
+    <img
+      *ngIf="screenshotData"
+      [src]="'data:image/png;base64,' + screenshotData"
+      alt="Screenshot"
+      class="screenshot-image"
+      (click)="handleScreenshotClick($event)"
+    >
+    <p *ngIf="!screenshotData">Waiting for screenshot</p>
+  </div>
+</div>
+
+<div *ngIf="!isConnected">
+  <p>Connect first</p>
+</div>

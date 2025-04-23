@@ -2,6 +2,7 @@ package chrome
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"sync"
 
@@ -14,6 +15,11 @@ type ChromeController struct {
 	Cancel   context.CancelFunc
 	Clients  map[*websocket.Conn]bool
 	ClientMu sync.Mutex
+}
+
+type ScrollPayload struct {
+	Direction string  `json:"direction"`
+	Percent   float64 `json:"percent"`
 }
 
 func RunChrome() ChromeController {
@@ -30,8 +36,8 @@ func RunChrome() ChromeController {
 	log.Println("Chrome is running successfully")
 
 	cancelAll := func() {
-		cancelTask()  // zamknij kontekst zadaniowy
-		cancelAlloc() // zamknij allocator
+		cancelTask()
+		cancelAlloc()
 	}
 
 	return ChromeController{
@@ -49,7 +55,7 @@ func opts() []chromedp.ExecAllocatorOption {
 		chromedp.Flag("disable-extensions", false),
 		chromedp.Flag("autoplay-policy", "no-user-gesture-required"),
 		chromedp.Flag("mute-audio", false),
-		chromedp.WindowSize(520, 900),
+		chromedp.WindowSize(530, 900),
 		chromedp.UserDataDir(""),
 	)
 
@@ -104,5 +110,60 @@ func Exit_Fullscreen(c *ChromeController) {
 }
 
 func Scroll(payload any, c *ChromeController) {
-	panic("not implemented")
+	var direction string
+	var percent float64
+	var valid bool
+
+	if payloadMap, ok := payload.(map[string]interface{}); ok {
+		dir, dirOk := payloadMap["direction"].(string)
+		pct, pctOk := payloadMap["percent"].(float64)
+
+		if dirOk && pctOk {
+			direction = dir
+			percent = pct
+			valid = true
+		}
+	} else if scrollPayload, ok := payload.(ScrollPayload); ok {
+		direction = scrollPayload.Direction
+		percent = scrollPayload.Percent
+		valid = true
+	}
+
+	if !valid {
+		log.Printf("Wrong payload for scroll: %T %v", payload, payload)
+		return
+	}
+
+	log.Printf("Executing scroll: direction=%s, percent=%.2f%%", direction, percent)
+
+	// Skrypt JavaScript do przewijania
+	var scrollScript string
+	if direction == "up" {
+		scrollScript = fmt.Sprintf(`
+            (function() {
+                var viewportHeight = window.innerHeight;
+                window.scrollBy(0, -%f * viewportHeight / 100);
+                return true;
+            })();
+        `, percent)
+	} else if direction == "down" {
+		scrollScript = fmt.Sprintf(`
+            (function() {
+                var viewportHeight = window.innerHeight;
+                window.scrollBy(0, %f * viewportHeight / 100);
+                return true;
+            })();
+        `, percent)
+	}
+
+	go func(script string) {
+		var result bool
+		err := chromedp.Run(c.Ctx,
+			chromedp.Evaluate(script, &result),
+		)
+		if err != nil {
+			log.Printf("Błąd podczas wykonywania przewijania: %v", err)
+		}
+
+	}(scrollScript)
 }
