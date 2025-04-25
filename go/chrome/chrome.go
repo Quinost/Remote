@@ -2,10 +2,11 @@ package chrome
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"sync"
+	"time"
 
+	"github.com/chromedp/cdproto/input"
 	"github.com/chromedp/chromedp"
 	"github.com/gorilla/websocket"
 )
@@ -26,7 +27,7 @@ func RunChrome() ChromeController {
 	allocCtx, cancelAlloc := chromedp.NewExecAllocator(context.Background(), opts()...)
 	taskCtx, cancelTask := chromedp.NewContext(allocCtx, chromedp.WithLogf(log.Printf))
 
-	var initialURL = "https://example.com/"
+	var initialURL = "about:blank" //"https://example.com/"
 
 	err := chromedp.Run(taskCtx, chromedp.Navigate((initialURL)))
 
@@ -50,7 +51,7 @@ func RunChrome() ChromeController {
 func opts() []chromedp.ExecAllocatorOption {
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
 		chromedp.Flag("headless", false),
-		chromedp.Flag("disable-gpu", true),
+		chromedp.Flag("disable-gpu", false),
 		chromedp.Flag("enable-automation", false),
 		chromedp.Flag("disable-extensions", false),
 		chromedp.Flag("autoplay-policy", "no-user-gesture-required"),
@@ -112,60 +113,69 @@ func Exit_Fullscreen(c *ChromeController) {
 }
 
 func Scroll(payload any, c *ChromeController) {
-	var direction string
-	var percent float64
-	var valid bool
+	if payloadMap, ok := payload.(map[string]any); ok {
+		startX, sxOk := payloadMap["startX"].(float64)
+		startY, syOk := payloadMap["startY"].(float64)
+		endX, exOk := payloadMap["endX"].(float64)
+		endY, eyOk := payloadMap["endY"].(float64)
+		duration, dOk := payloadMap["duration"].(float64)
 
-	if payloadMap, ok := payload.(map[string]interface{}); ok {
-		dir, dirOk := payloadMap["direction"].(string)
-		pct, pctOk := payloadMap["percent"].(float64)
+		if sxOk && syOk && exOk && eyOk && dOk {
+			log.Printf("Executing swipe: from (%f,%f) to (%f,%f) over %f ms",
+				startX, startY, endX, endY, duration)
 
-		if dirOk && pctOk {
-			direction = dir
-			percent = pct
-			valid = true
+			go func() {
+				err := chromedp.Run(c.Ctx,
+					chromedp.ActionFunc(func(ctx context.Context) error {
+						// Symulacja zdarzenia touchstart
+						touchPoints := []*input.TouchPoint{
+							{ID: 0, X: startX, Y: startY},
+						}
+
+						err := input.DispatchTouchEvent(input.TouchStart, touchPoints).Do(ctx)
+						if err != nil {
+							return err
+						}
+
+						// Symulacja płynnego ruchu
+						steps := 10
+						stepDuration := time.Duration(duration/float64(steps)) * time.Millisecond
+
+						for i := 1; i <= steps; i++ {
+							progress := float64(i) / float64(steps)
+							currentX := startX + (endX-startX)*progress
+							currentY := startY + (endY-startY)*progress
+
+							// Aktualizacja pozycji dotyku (touchmove)
+							touchPoints = []*input.TouchPoint{
+								{ID: 0, X: currentX, Y: currentY},
+							}
+
+							err := input.DispatchTouchEvent(input.TouchMove, touchPoints).Do(ctx)
+							if err != nil {
+								return err
+							}
+							time.Sleep(stepDuration)
+						}
+
+						// Zakończenie dotyku (touchend)
+						touchPoints = []*input.TouchPoint{
+							{ID: 0, X: endX, Y: endY},
+						}
+
+						err = input.DispatchTouchEvent(input.TouchEnd, touchPoints).Do(ctx)
+						return err
+					}),
+				)
+
+				if err != nil {
+					log.Printf("Failed to execute swipe: %v", err)
+				}
+			}()
+		} else {
+			log.Printf("Invalid swipe parameters: %v", payloadMap)
 		}
-	} else if scrollPayload, ok := payload.(ScrollPayload); ok {
-		direction = scrollPayload.Direction
-		percent = scrollPayload.Percent
-		valid = true
-	}
-
-	if !valid {
-		log.Printf("Wrong payload for scroll: %T %v", payload, payload)
-		return
-	}
-
-	log.Printf("Executing scroll: direction=%s, percent=%.2f%%", direction, percent)
-
-	var scrollScript string
-	if direction == "up" {
-		scrollScript = fmt.Sprintf(`
-            (function() {
-                var scrollAmount = -%f * window.innerHeight / 100;
-                window.scrollBy(0, Math.max(scrollAmount, -window.scrollY));
-                return true;
-            })();
-        `, percent)
 	} else {
-		scrollScript = fmt.Sprintf(`
-            (function() {
-                var scrollAmount = %f * window.innerHeight / 100;
-				var maxScroll = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-                window.scrollBy(0, Math.min(scrollAmount, maxScroll - window.scrollY));
-                return true;
-            })();
-        `, percent)
+		log.Printf("Invalid payload for swipe: %v", payload)
 	}
-
-	go func(script string) {
-		var result bool
-		err := chromedp.Run(c.Ctx,
-			chromedp.Evaluate(script, &result),
-		)
-		if err != nil {
-			log.Printf("Błąd podczas wykonywania przewijania: %v", err)
-		}
-
-	}(scrollScript)
 }

@@ -41,3 +41,62 @@ hr {
 .input-container {
   margin-bottom: 4px;
 }
+
+.screenshot-container {
+  position: relative;
+  width: 100%;
+  max-width: 530px;
+  margin: 0 auto;
+  touch-action: none;
+}
+
+.screenshot-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+}
+
+.button-container {
+  display: flex;
+  justify-content: space-around;
+  margin: 10px 0;
+  flex-wrap: wrap;
+}
+
+button {
+  padding: 8px 12px;
+  margin: 5px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  background-color: #f0f0f0;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #e0e0e0;
+}
+
+button:active {
+  background-color: #d0d0d0;
+}
+
+.input-container {
+  display: flex;
+  margin: 10px 0;
+}
+
+input {
+  flex-grow: 1;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px 0 0 4px;
+}
+
+.input-container button {
+  border-radius: 0 4px 4px 0;
+  margin: 0;
+}

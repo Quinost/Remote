@@ -1,3 +1,4 @@
+<!-- app.component.html - zmiany dotyczące obsługi swipe -->
 
 <div>
   <button *ngIf="!isConnected" (click)="connectWebSocket()">Connect</button>
@@ -22,11 +23,15 @@
 
   <div class="screenshot-container">
     <img
+      #screenshotImg
       *ngIf="screenshotData"
       [src]="'data:image/png;base64,' + screenshotData"
       alt="Screenshot"
       class="screenshot-image"
       (click)="handleScreenshotClick($event)"
+      (touchstart)="handleTouchStart($event)"
+      (touchmove)="handleTouchMove($event)"
+      (touchend)="handleTouchEnd($event)"
     >
     <p *ngIf="!screenshotData">Waiting for screenshot</p>
   </div>
