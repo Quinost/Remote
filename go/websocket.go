@@ -14,9 +14,15 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+const (
+	ScreenshotInterval = 100 * time.Millisecond
+	ScreenshotTimeout  = 2 * time.Second
+	BufferSize         = 1024
+)
+
 var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
+	ReadBufferSize:  BufferSize,
+	WriteBufferSize: BufferSize,
 	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
@@ -96,60 +102,69 @@ func (c *ControllerExt) handleWebSocketMessages(conn *websocket.Conn) {
 func (c *ControllerExt) streamScreenshots(conn *websocket.Conn) {
 	defer c.unregisterClient(conn)
 
-	ticker := time.NewTicker(100 * time.Millisecond)
+	ticker := time.NewTicker(ScreenshotInterval)
 	defer ticker.Stop()
 
 	for range ticker.C {
-		var buf []byte
-		err := chromedp.Run(c.Ctx,
-			chromedp.ActionFunc(func(ctx context.Context) error {
-				sCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
-				defer cancel()
-				var errCap error
-				buf, errCap = page.CaptureScreenshot().
-					WithFormat(page.CaptureScreenshotFormatJpeg).
-					WithCaptureBeyondViewport(false).
-					Do(sCtx)
-				return errCap
-			}),
-		)
-
+		screenshot, err := c.captureScreenshot()
 		if err != nil {
 			if err != context.DeadlineExceeded {
 				log.Printf("Error capturing screenshot: %v", err)
 			}
+			continue
 		}
 
-		if len(buf) > 0 {
-			encoded := base64.StdEncoding.EncodeToString(buf)
+		if len(screenshot) == 0 {
+			continue
+		}
 
-			msg := WebSocketMessage{
-				Type:    "screenshot",
-				Payload: encoded,
-			}
-
-			jsonData, err := json.Marshal(msg)
-
-			if err != nil {
-				log.Printf("Error encoding JSON message: %v", err)
-			}
-
-			c.ChromeController.ClientMu.Lock()
-			err = conn.WriteMessage(websocket.TextMessage, jsonData)
-			c.ChromeController.ClientMu.Unlock()
-
-			if err != nil {
-				log.Printf("Error sending message: %v", err)
-				return
-			}
+		if err := c.sendScreenshot(conn, screenshot); err != nil {
+			log.Printf("Error sending screenshot: %v", err)
+			return
 		}
 	}
+}
+
+func (c *ControllerExt) captureScreenshot() ([]byte, error) {
+	var buf []byte
+	err := chromedp.Run(c.Ctx,
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			sCtx, cancel := context.WithTimeout(ctx, ScreenshotTimeout)
+			defer cancel()
+
+			var errCap error
+			buf, errCap = page.CaptureScreenshot().
+				WithFormat(page.CaptureScreenshotFormatJpeg).
+				WithCaptureBeyondViewport(false).
+				Do(sCtx)
+			return errCap
+		}),
+	)
+	return buf, err
+}
+
+func (c *ControllerExt) sendScreenshot(conn *websocket.Conn, screenshot []byte) error {
+	encoded := base64.StdEncoding.EncodeToString(screenshot)
+
+	msg := WebSocketMessage{
+		Type:    "screenshot",
+		Payload: encoded,
+	}
+
+	jsonData, err := json.Marshal(msg)
+	if err != nil {
+		return err
+	}
+
+	c.ChromeController.ClientMu.Lock()
+	defer c.ChromeController.ClientMu.Unlock()
+
+	return conn.WriteMessage(websocket.TextMessage, jsonData)
 }
 
 func send_button(msg *WebSocketMessage, c *ControllerExt) {
 	if button, ok := msg.Payload.(string); ok {
 		log.Printf("Executing send_button: %s", button)
-
 		handleButtons(button, c)
 	} else {
 		log.Printf("Invalid payload for send_button: %v", msg.Payload)

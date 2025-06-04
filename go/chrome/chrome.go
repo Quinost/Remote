@@ -32,7 +32,7 @@ func RunChrome() ChromeController {
 	taskCtx, cancelTask, _ := cu.New(
 		cu.NewConfig(cu.WithChromeFlags(opts()...)))
 
-	var initialURL = "https://example.com/"
+	var initialURL = "https://google.com"
 
 	err := chromedp.Run(taskCtx,
 		chromedp.Navigate((initialURL)))
@@ -59,8 +59,6 @@ func opts() []chromedp.ExecAllocatorOption {
 	execPath, _ := os.Executable()
 	dir := filepath.Join(filepath.Dir(execPath), "ChromeProfile")
 
-	//dir = `E:\aaSources\Remote\go\ChromeProfile`
-
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
 		chromedp.Flag("headless", false),
 		chromedp.Flag("mute-audio", false),
@@ -78,7 +76,6 @@ func opts() []chromedp.ExecAllocatorOption {
 		chromedp.Flag("no-default-browser-check", true),
 		chromedp.Flag("use-gl", "desktop"),
 		chromedp.Flag("enable-webgl", true),
-		//chromedp.UserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"),
 		chromedp.WindowSize(530, 900),
 		chromedp.UserDataDir(dir),
 		chromedp.Flag("profile-directory", "Profile"),
@@ -205,7 +202,7 @@ func Scroll(payload any, c *ChromeController) {
 			chromedp.Evaluate(script, &result),
 		)
 		if err != nil {
-			log.Printf("Błąd podczas wykonywania przewijania: %v", err)
+			log.Printf("Error during scroll: %v", err)
 		}
 
 	}(scrollScript)
