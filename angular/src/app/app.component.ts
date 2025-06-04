@@ -70,7 +70,14 @@ export class AppComponent implements OnInit, OnDestroy {
     this.websocketService.sendMessage(message);
   }
 
-  sendBtn(button: 'volume_up' | 'volume_down' | 'exit_fullscreen'): void {
+  shutdownConfirmation(): void {
+    const confirmed = window.confirm('Shutdown?');
+    if(confirmed){
+      this.sendBtn('shutdown')
+    }
+  }
+
+  sendBtn(button: 'volume_up' | 'volume_down' | 'exit_fullscreen' | 'shutdown'): void {
     if (!this.isConnected)
       return;
     const message: WebSocketMessage = {

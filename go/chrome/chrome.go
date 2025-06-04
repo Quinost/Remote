@@ -4,10 +4,16 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
 	"sync"
 
+	"github.com/chromedp/cdproto/cdp"
+	"github.com/chromedp/cdproto/target"
 	"github.com/chromedp/chromedp"
 	"github.com/gorilla/websocket"
+
+	cu "github.com/Davincible/chromedp-undetected"
 )
 
 type ChromeController struct {
@@ -23,21 +29,23 @@ type ScrollPayload struct {
 }
 
 func RunChrome() ChromeController {
-	allocCtx, cancelAlloc := chromedp.NewExecAllocator(context.Background(), opts()...)
-	taskCtx, cancelTask := chromedp.NewContext(allocCtx, chromedp.WithLogf(log.Printf))
+	taskCtx, cancelTask, _ := cu.New(
+		cu.NewConfig(cu.WithChromeFlags(opts()...)))
 
 	var initialURL = "https://example.com/"
 
-	err := chromedp.Run(taskCtx, chromedp.Navigate((initialURL)))
+	err := chromedp.Run(taskCtx,
+		chromedp.Navigate((initialURL)))
+
+	listenTarget(&taskCtx)
 
 	if err != nil {
-		log.Fatalf("Faile to run chrome: %v", err)
+		log.Fatalf("Failed to run chrome: %v", err)
 	}
 	log.Println("Chrome is running successfully")
 
 	cancelAll := func() {
 		cancelTask()
-		cancelAlloc()
 	}
 
 	return ChromeController{
@@ -48,20 +56,53 @@ func RunChrome() ChromeController {
 }
 
 func opts() []chromedp.ExecAllocatorOption {
+	execPath, _ := os.Executable()
+	dir := filepath.Join(filepath.Dir(execPath), "ChromeProfile")
+
+	//dir = `E:\aaSources\Remote\go\ChromeProfile`
+
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
 		chromedp.Flag("headless", false),
+		chromedp.Flag("mute-audio", false),
+		chromedp.Flag("hide-scrollbars", false),
+
 		chromedp.Flag("disable-gpu", true),
+		chromedp.Flag("no-sandbox", true),
 		chromedp.Flag("enable-automation", false),
 		chromedp.Flag("disable-extensions", false),
 		chromedp.Flag("autoplay-policy", "no-user-gesture-required"),
 		chromedp.Flag("mute-audio", false),
 		chromedp.Flag("high-dpi-support", true),
 		chromedp.Flag("force-device-scale-factor", "1.0"),
+		chromedp.Flag("no-first-runs", true),
+		chromedp.Flag("no-default-browser-check", true),
+		chromedp.Flag("use-gl", "desktop"),
+		chromedp.Flag("enable-webgl", true),
+		//chromedp.UserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"),
 		chromedp.WindowSize(530, 900),
-		chromedp.UserDataDir(""),
+		chromedp.UserDataDir(dir),
+		chromedp.Flag("profile-directory", "Profile"),
 	)
 
 	return opts
+}
+
+func listenTarget(taskCtx *context.Context) {
+	chromedp.ListenTarget(*taskCtx, func(ev any) {
+		if ev, ok := ev.(*target.EventTargetCreated); ok {
+			if ev.TargetInfo.Type == "page" || ev.TargetInfo.Type == "window" {
+				go func() {
+					c := chromedp.FromContext(*taskCtx)
+					err := target.CloseTarget(ev.TargetInfo.TargetID).Do(cdp.WithExecutor(*taskCtx, c.Browser))
+					if err != nil {
+						log.Printf("Failed to close %s: %v", ev.TargetInfo.TargetID, err)
+					} else {
+						log.Printf("Closed %s", ev.TargetInfo.TargetID)
+					}
+				}()
+			}
+		}
+	})
 }
 
 func Open_Url(payload any, c *ChromeController) {

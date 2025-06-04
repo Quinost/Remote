@@ -1,2 +1,4 @@
 *.exe
 go/dist/*.*
+go/ChromeProfile/*
+go/remote

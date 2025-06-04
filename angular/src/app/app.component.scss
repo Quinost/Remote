@@ -28,7 +28,16 @@ hr {
 
 .button-container {
   display: flex;
-  gap: 2px;
+  gap: 5px;
+  margin-top: 10px;
+
+  button {
+    min-width: 50px;
+  }
+
+  p {
+    margin: 15px;
+  }
 }
 
 .screenshot-image {
@@ -38,6 +47,3 @@ hr {
   cursor: pointer;
 }
 
-.input-container {
-  margin-bottom: 4px;
-}

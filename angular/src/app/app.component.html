@@ -7,17 +7,21 @@
 <hr>
 
 <div *ngIf="isConnected">
-  <div class="input-container">
-    <input type="text" id="urlInput" [(ngModel)]="urlInput" placeholder="np. https://google.com">
-    <button (click)="openUrl()" [disabled]="!urlInput">Open</button>
-  </div>
+  <div>
+    <div class="input-container">
+      <input type="text" id="urlInput" [(ngModel)]="urlInput" placeholder="np. https://google.com">
+      <button (click)="openUrl()" [disabled]="!urlInput">Open</button>
+    </div>
 
-  <div class="button-container">
-    <button (click)="sendBtn('volume_up')">VolUP</button>
-    <button (click)="sendBtn('volume_down')">VolDOWN</button>
-    <button (click)="sendBtn('exit_fullscreen')">ESC</button>
-    <button (click)="scrollPage('up')">ScrollUP</button>
-    <button (click)="scrollPage('down')">ScrollDOWN</button>
+    <div class="button-container">
+      <button (click)="sendBtn('volume_up')">🔊</button>
+      <button (click)="sendBtn('volume_down')">🔉</button>
+      <button (click)="scrollPage('up')">🔼</button>
+      <button (click)="scrollPage('down')">🔽</button>
+      <button (click)="sendBtn('exit_fullscreen')">ESC</button>
+      <p></p>
+      <button (click)="shutdownConfirmation()">Shutdown</button>
+    </div>
   </div>
 
   <div class="screenshot-container">

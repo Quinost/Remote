@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"remote/chrome"
-	"syscall"
 	"time"
 
 	"github.com/chromedp/cdproto/page"
@@ -25,11 +24,6 @@ type WebSocketMessage struct {
 	Type    string `json:"type"`
 	Payload any    `json:"payload"`
 }
-
-var (
-	user32     = syscall.NewLazyDLL("user32.dll")
-	keybdEvent = user32.NewProc("keybd_event")
-)
 
 func (c *ControllerExt) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -156,33 +150,8 @@ func send_button(msg *WebSocketMessage, c *ControllerExt) {
 	if button, ok := msg.Payload.(string); ok {
 		log.Printf("Executing send_button: %s", button)
 
-		switch button {
-		case "volume_up":
-			pressKey(0xAF)
-		case "volume_down":
-			pressKey(0xAE)
-		case "exit_fullscreen":
-			go chrome.Exit_Fullscreen(c.ChromeController)
-		default:
-			log.Printf("Unknown button: %s", button)
-		}
+		handleButtons(button, c)
 	} else {
 		log.Printf("Invalid payload for send_button: %v", msg.Payload)
 	}
-}
-
-func pressKey(code byte) {
-	keybdEvent.Call(
-		uintptr(code),
-		uintptr(0),
-		uintptr(0),
-		uintptr(0),
-	)
-	time.Sleep(20 * time.Millisecond)
-	keybdEvent.Call(
-		uintptr(code),
-		uintptr(0),
-		uintptr(0x0002),
-		uintptr(0),
-	)
 }
