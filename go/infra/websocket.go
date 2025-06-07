@@ -1,4 +1,4 @@
-package main
+package infra
 
 import (
 	"context"
@@ -29,6 +29,11 @@ var upgrader = websocket.Upgrader{
 type WebSocketMessage struct {
 	Type    string `json:"type"`
 	Payload any    `json:"payload"`
+}
+
+type ControllerExt struct {
+	*chrome.ChromeController
+	Server *http.Server
 }
 
 func (c *ControllerExt) HandleWebSocket(w http.ResponseWriter, r *http.Request) {

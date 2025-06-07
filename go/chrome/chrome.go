@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	cfg "remote/config"
 	"sync"
 
 	"github.com/chromedp/cdproto/cdp"
@@ -28,11 +29,11 @@ type ScrollPayload struct {
 	Percent   float64 `json:"percent"`
 }
 
-func RunChrome() ChromeController {
+func RunChrome(cfg *cfg.Config) ChromeController {
 	taskCtx, cancelTask, _ := cu.New(
-		cu.NewConfig(cu.WithChromeFlags(opts()...)))
+		cu.NewConfig(cu.WithChromeFlags(opts(cfg)...)))
 
-	var initialURL = "https://google.com"
+	var initialURL = cfg.DefaultWebpage
 
 	err := chromedp.Run(taskCtx,
 		chromedp.Navigate((initialURL)))
@@ -55,7 +56,7 @@ func RunChrome() ChromeController {
 	}
 }
 
-func opts() []chromedp.ExecAllocatorOption {
+func opts(cfg *cfg.Config) []chromedp.ExecAllocatorOption {
 	execPath, _ := os.Executable()
 	dir := filepath.Join(filepath.Dir(execPath), "ChromeProfile")
 
@@ -76,9 +77,9 @@ func opts() []chromedp.ExecAllocatorOption {
 		chromedp.Flag("no-default-browser-check", true),
 		chromedp.Flag("use-gl", "desktop"),
 		chromedp.Flag("enable-webgl", true),
-		chromedp.WindowSize(530, 900),
+		chromedp.WindowSize(cfg.Resolution.Width, cfg.Resolution.Height),
 		chromedp.UserDataDir(dir),
-		chromedp.Flag("profile-directory", "Profile"),
+		chromedp.Flag("profile-directory", cfg.Profile),
 	)
 
 	return opts
