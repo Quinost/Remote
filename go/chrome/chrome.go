@@ -35,8 +35,7 @@ func RunChrome(cfg *cfg.Config) ChromeController {
 
 	var initialURL = cfg.DefaultWebpage
 
-	err := chromedp.Run(taskCtx,
-		chromedp.Navigate((initialURL)))
+	err := chromedp.Run(taskCtx, chromedp.Navigate((initialURL)))
 
 	listenTarget(&taskCtx)
 
@@ -77,6 +76,7 @@ func opts(cfg *cfg.Config) []chromedp.ExecAllocatorOption {
 		chromedp.Flag("no-default-browser-check", true),
 		chromedp.Flag("use-gl", "desktop"),
 		chromedp.Flag("enable-webgl", true),
+		chromedp.Flag("hide-crash-restore-bubble", true),
 		chromedp.WindowSize(cfg.Resolution.Width, cfg.Resolution.Height),
 		chromedp.UserDataDir(dir),
 		chromedp.Flag("profile-directory", cfg.Profile),

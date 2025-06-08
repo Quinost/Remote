@@ -49,6 +49,8 @@ export class AppComponent implements OnInit, OnDestroy {
           }
         }
       )
+
+    this.websocketService.connect(this.wsUrl);
   }
 
   connectWebSocket(): void {
@@ -72,7 +74,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   shutdownConfirmation(): void {
     const confirmed = window.confirm('Shutdown?');
-    if(confirmed){
+    if (confirmed) {
       this.sendBtn('shutdown')
     }
   }

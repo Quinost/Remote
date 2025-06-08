@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -14,8 +15,8 @@ import (
 
 func main() {
 	config := config.LoadConfig()
-	log.Println(config)
-	base := chrome.RunChrome(config)
+	fmt.Println(config)
+	base := chrome.RunChrome(&config)
 	c := infra.ControllerExt{ChromeController: &base}
 
 	stopChan := make(chan os.Signal, 1)

@@ -18,7 +18,7 @@ type Config struct {
 	DefaultWebpage 	string 		`json:"defaultWebpage"`
 }
 
-func LoadConfig() *Config {
+func LoadConfig() Config {
 	defaultConfig := Config{
 		Resolution: Resolution{530, 900},
 		Profile:    "Profile",
@@ -28,12 +28,12 @@ func LoadConfig() *Config {
 	configFile, err := os.ReadFile("config.json")
 
 	if err != nil {
-		return &defaultConfig
+		return defaultConfig
 	}
 
 	json.Unmarshal(configFile, &defaultConfig)
 
-	return &defaultConfig
+	return defaultConfig
 }
 
 func (r *Resolution) UnmarshalJSON(data []byte) error {

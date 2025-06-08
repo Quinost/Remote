@@ -2,3 +2,4 @@
 go/dist/*.*
 go/ChromeProfile/*
 go/remote
+go/*.zip
