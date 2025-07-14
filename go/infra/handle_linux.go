@@ -11,7 +11,7 @@ import (
 func handleButtons(button string, c *ControllerExt) {
 	switch button {
 	case "volume_up":
-		exec.Command("amixer", "set", "Master", "5%+").Run() 
+		exec.Command("amixer", "set", "Master", "5%+").Run()
 	case "volume_down":
 		exec.Command("amixer", "set", "Master", "5%-").Run()
 	case "exit_fullscreen":
@@ -22,3 +22,7 @@ func handleButtons(button string, c *ControllerExt) {
 		log.Printf("Unknown button: %s", button)
 	}
 }
+
+func PreventSleep() {}
+
+func AllowSleep() {}

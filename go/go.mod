@@ -7,6 +7,7 @@ require (
 	github.com/chromedp/cdproto v0.0.0-20250530212709-4dcc110a7b92
 	github.com/chromedp/chromedp v0.13.6
 	github.com/gorilla/websocket v1.5.3
+	golang.org/x/sys v0.33.0
 )
 
 require (
@@ -20,6 +21,5 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/mailru/easyjson v0.9.0 // indirect
 	golang.org/x/exp v0.0.0-20250506013437-ce4c2cf36ca6 // indirect
-	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/text v0.25.0 // indirect
 )

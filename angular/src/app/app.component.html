@@ -14,13 +14,14 @@
     </div>
 
     <div class="button-container">
-      <button (click)="sendBtn('volume_up')">🔊</button>
-      <button (click)="sendBtn('volume_down')">🔉</button>
-      <button (click)="scrollPage('up')">🔼</button>
-      <button (click)="scrollPage('down')">🔽</button>
-      <button (click)="sendBtn('exit_fullscreen')">ESC</button>
-      <p></p>
-      <button (click)="shutdownConfirmation()">Shutdown</button>
+      <div>
+        <button (click)="sendBtn('volume_up')">🔊</button>
+        <button (click)="sendBtn('volume_down')">🔉</button>
+        <button (click)="scrollPage('up')">🔼</button>
+        <button (click)="scrollPage('down')">🔽</button>
+        <button (click)="sendBtn('exit_fullscreen')">❌</button>
+      </div>
+      <button (click)="shutdownConfirmation()">🔌</button>
     </div>
   </div>
 

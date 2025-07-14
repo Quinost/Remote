@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, inject, OnDestroy, OnInit } from '@angular/core';
+import { AfterViewInit, Component, DestroyRef, inject, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { WebSocketMessage, WebsocketService } from './websocket.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -14,7 +14,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
-export class AppComponent implements OnInit, OnDestroy {
+export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   isConnected = false;
   screenshotData: string | null = null;
   urlInput: string = '';
@@ -23,6 +23,10 @@ export class AppComponent implements OnInit, OnDestroy {
   private wsUrl = `ws://${window.location.hostname}:${window.location.port}/ws`
 
   constructor(private websocketService: WebsocketService) { }
+
+  ngAfterViewInit(): void {
+    this.websocketService.connect(this.wsUrl);
+  }
 
   ngOnDestroy(): void {
     this.websocketService.disconnect();
@@ -49,8 +53,6 @@ export class AppComponent implements OnInit, OnDestroy {
           }
         }
       )
-
-    this.websocketService.connect(this.wsUrl);
   }
 
   connectWebSocket(): void {

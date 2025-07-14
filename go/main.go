@@ -14,6 +14,9 @@ import (
 )
 
 func main() {
+	infra.PreventSleep()
+	defer infra.AllowSleep()
+
 	config := config.LoadConfig()
 	fmt.Println(config)
 	base := chrome.RunChrome(&config)
