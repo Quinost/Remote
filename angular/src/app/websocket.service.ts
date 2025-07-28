@@ -2,7 +2,7 @@ import { DestroyRef, inject, Injectable } from "@angular/core";
 import { BehaviorSubject, Subject } from "rxjs";
 
 export interface WebSocketMessage {
-  type: 'open_url' | 'send_button' | 'click_at' | 'scroll' | 'screenshot';
+  type: 'open_url' | 'send_button' | 'click_at' | 'scroll' | 'screenshot' | 'type_enter' ;
   payload: any;
 }
 

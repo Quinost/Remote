@@ -132,4 +132,19 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
     this.websocketService.sendMessage(message);
   }
+
+  typeText(): void {
+    if (!this.isConnected) return;
+
+    const text = prompt('Enter text to type:');
+
+    if (text && text.trim()) {
+      const message: WebSocketMessage = {
+        type: 'type_enter',
+        payload: text
+      }
+
+      this.websocketService.sendMessage(message);
+    }
+  }
 }

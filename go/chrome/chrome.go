@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	cfg "remote/config"
 	"sync"
+	"time"
 
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/cdproto/target"
@@ -139,6 +140,49 @@ func Click_At(payload any, c *ChromeController) {
 	} else {
 		log.Printf("Invalid payload for click_at: %v", payload)
 	}
+}
+
+func Type_Enter(payload any, c *ChromeController) {
+	var text string
+	var valid bool
+
+	if payloadMap, ok := payload.(map[string]interface{}); ok {
+		if textVal, textOk := payloadMap["text"].(string); textOk {
+			text = textVal
+			valid = true
+		}
+	} else if textStr, ok := payload.(string); ok {
+		text = textStr
+		valid = true
+	}
+
+	if !valid {
+		log.Printf("Invalid payload for type_enter: %T %v", payload, payload)
+		return
+	}
+
+	log.Printf("Executing type_enter: text=%s", text)
+
+	go func(textToType string) {
+		jsText := fmt.Sprintf("%q", textToType)
+
+		err := chromedp.Run(c.Ctx,
+			chromedp.Evaluate(fmt.Sprintf(`
+				var focused = document.activeElement;
+				if (focused && (focused.tagName === 'INPUT' || focused.tagName === 'TEXTAREA' || focused.contentEditable === 'true')) {
+					focused.value = %s;
+					focused.dispatchEvent(new Event('input', { bubbles: true }));
+					focused.dispatchEvent(new Event('change', { bubbles: true }));
+				}
+			`, jsText), nil),
+			chromedp.Sleep(50*time.Millisecond),
+		)
+		if err != nil {
+			log.Printf("Error during type: %v", err)
+		} else {
+			log.Printf("Successfully typed: %s", textToType)
+		}
+	}(text)
 }
 
 func Exit_Fullscreen(c *ChromeController) {

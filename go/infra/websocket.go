@@ -93,6 +93,8 @@ func (c *ControllerExt) handleWebSocketMessages(conn *websocket.Conn) {
 				chrome.Open_Url(msg.Payload, c.ChromeController)
 			case "click_at":
 				chrome.Click_At(msg.Payload, c.ChromeController)
+			case "type_enter":
+				chrome.Type_Enter(msg.Payload, c.ChromeController)
 			case "send_button":
 				send_button(&msg, c)
 			case "scroll":
